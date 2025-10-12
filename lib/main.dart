@@ -185,6 +185,7 @@ class _TwelveInputFieldsState extends State<TwelveInputFields> {
         child: Column(
           children: [
             ...List.generate(12, (index) {
+              var controller = _controllers[index];
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8.0),
                 child: Row(
@@ -196,11 +197,17 @@ class _TwelveInputFieldsState extends State<TwelveInputFields> {
                         inputFormatters: [
                           FilteringTextInputFormatter.digitsOnly,
                         ],
-                        controller: _controllers[index],
+                        controller: controller,
                         decoration: InputDecoration(
                           labelText: Monat.values[index].name,
                           border: OutlineInputBorder(),
                         ),
+                        onTap: () {
+                          controller.selection = TextSelection(
+                            baseOffset: 0,
+                            extentOffset: controller.text.length,
+                          );
+                        },
                       ),
                     ),
                     SizedBox(width: 8),
