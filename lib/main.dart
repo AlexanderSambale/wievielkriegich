@@ -119,6 +119,59 @@ class _TwelveInputFieldsState extends State<TwelveInputFields> {
     });
   }
 
+  void _handleSubmit() {
+    List<int?> values = _controllers
+        .map((controller) => int.tryParse(controller.text))
+        .toList();
+    List<int> income_values;
+
+    bool hasNull = values.contains(null);
+    if (hasNull) {
+      return;
+    } else {
+      income_values = values.cast<int>();
+    }
+
+    int x = income_values.reduce((a, b) => a + b); // Sum of all values
+    x = x.floor(); // Round down to full Euro
+
+    double tax = 0;
+
+    if (x <= 12096) {
+      tax = 0;
+    } else if (x >= 12097 && x <= 17443) {
+      double y = (x - 12096) / 10000;
+      tax = (932.30 * y + 1400) * y;
+    } else if (x >= 17444 && x <= 68480) {
+      double z = (x - 17443) / 10000;
+      tax = (176.64 * z + 2397) * z + 1015.13;
+    } else if (x >= 68481 && x <= 277825) {
+      tax = 0.42 * x - 10911.92;
+    } else if (x >= 277826) {
+      tax = 0.45 * x - 19246.67;
+    }
+
+    tax = tax.floorToDouble(); // Round down to nearest Euro
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text('Einkommenssteuerprognose'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [Text('${tax.toStringAsFixed(0)} €')],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -130,41 +183,47 @@ class _TwelveInputFieldsState extends State<TwelveInputFields> {
       body: SingleChildScrollView(
         padding: EdgeInsets.all(16),
         child: Column(
-          children: List.generate(12, (index) {
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8.0),
-              child: Row(
-                children: [
-                  // Expanded TextField
-                  Expanded(
-                    child: TextField(
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      controller: _controllers[index],
-                      decoration: InputDecoration(
-                        labelText: Monat.values[index].name,
-                        border: OutlineInputBorder(),
+          children: [
+            ...List.generate(12, (index) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: Row(
+                  children: [
+                    // Expanded TextField
+                    Expanded(
+                      child: TextField(
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
+                        controller: _controllers[index],
+                        decoration: InputDecoration(
+                          labelText: Monat.values[index].name,
+                          border: OutlineInputBorder(),
+                        ),
                       ),
                     ),
-                  ),
-                  SizedBox(width: 8),
-                  // Down arrow button (if not the last input)
-                  if (index < _controllers.length - 1)
+                    SizedBox(width: 8),
+                    // Down arrow button (if not the last input)
+                    if (index < _controllers.length - 1)
+                      IconButton(
+                        icon: Icon(Icons.arrow_downward),
+                        tooltip: 'Copy to next field',
+                        onPressed: () => _copyValueDown(index),
+                      ),
+                    // Clear button
                     IconButton(
-                      icon: Icon(Icons.arrow_downward),
-                      tooltip: 'Copy to next field',
-                      onPressed: () => _copyValueDown(index),
+                      icon: Icon(Icons.clear),
+                      tooltip: 'Clear field',
+                      onPressed: () => _clearField(index),
                     ),
-                  // Clear button
-                  IconButton(
-                    icon: Icon(Icons.clear),
-                    tooltip: 'Clear field',
-                    onPressed: () => _clearField(index),
-                  ),
-                ],
-              ),
-            );
-          }),
+                  ],
+                ),
+              );
+            }),
+            SizedBox(height: 24),
+            ElevatedButton(onPressed: _handleSubmit, child: Text('Submit')),
+          ],
         ),
       ),
     );
