@@ -179,14 +179,33 @@ class _TwelveInputFieldsState extends State<TwelveInputFields> {
       context: context,
       builder: (_) => AlertDialog(
         title: Text('Einkommenssteuerprognose'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Einkommenssteuer dieses Jahr: ${tax.toStringAsFixed(0)} €'),
-            Text('Bereits bezahlte Steuer: ${taxPaid.toStringAsFixed(0)} €'),
-            Text('Steuerrückerstattung: ${taxReturn.toStringAsFixed(0)} €'),
-          ],
+        content: SingleChildScrollView(
+          padding: EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Es wurden viele Vereinfachungen getroffen, z.B. wird die Steuerklasse I angenommen, keine zusätzlichen Einnahmen aus anderen Quellen als aus nichtselbstständiger Arbeit, ein fester Satz für die Krankenversicherung, usw. Damit stellen die hier angegebenen Werte nur eine Schätzung dar. Individuelle Ergebnisse können abweichen',
+              ),
+              SizedBox(height: 16),
+              Text(
+                'Die hier bereitgestellten Informationen stellen keine Finanzberatung dar und sind nicht als solche gedacht. Die Informationen sind allgemeiner Natur und dienen nur zu Informationszwecken. Wenn Sie Finanzberatung für Ihre individuelle Situation benötigen, sollten Sie den Rat von einem qualifizierten Finanzberater einholen.',
+              ),
+              SizedBox(height: 16),
+              Text('Einkommenssteuer dieses Jahr: ${tax.toStringAsFixed(0)} €'),
+              Text('Bereits bezahlte Steuer: ${taxPaid.toStringAsFixed(0)} €'),
+              Row(
+                children: [
+                  Text('Steuerrückerstattung: '),
+                  Text(
+                    '${taxReturn.toStringAsFixed(0)} €',
+                    style: TextStyle(color: Colors.green),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(
