@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -119,39 +121,59 @@ class _TwelveInputFieldsState extends State<TwelveInputFields> {
     });
   }
 
+  double _calculateTax(int income) {
+    // -1230 Werbekostenpauschale
+    // Sonderausgaben Rentenversichung
+    double taxableIncome = income * (1 - 0.093) - 1230;
+    double insurance = min(income * 0.12, 1900); // Pflegeversicherung
+    taxableIncome -= insurance;
+    double tax = 0;
+
+    if (taxableIncome <= 12096) {
+      tax = 0;
+    } else if (taxableIncome >= 12097 && taxableIncome <= 17443) {
+      double y = (taxableIncome - 12096) / 10000;
+      tax = (932.30 * y + 1400) * y;
+    } else if (taxableIncome >= 17444 && taxableIncome <= 68480) {
+      double z = (taxableIncome - 17443) / 10000;
+      tax = (176.64 * z + 2397) * z + 1015.13;
+    } else if (taxableIncome >= 68481 && taxableIncome <= 277825) {
+      tax = 0.42 * taxableIncome - 10911.92;
+    } else if (taxableIncome >= 277826) {
+      tax = 0.45 * taxableIncome - 19246.67;
+    }
+
+    tax = tax.floorToDouble(); // Round down to nearest Euro
+    return tax;
+  }
+
+  double _calculatePaidTax(List<int> incomeValues) {
+    double paidTax = 0;
+    for (var monthlyIncome in incomeValues) {
+      paidTax += _calculateTax(monthlyIncome * 12) / 12.0;
+    }
+    return paidTax;
+  }
+
   void _handleSubmit() {
     List<int?> values = _controllers
         .map((controller) => int.tryParse(controller.text))
         .toList();
-    List<int> income_values;
+    List<int> incomeValues;
 
     bool hasNull = values.contains(null);
     if (hasNull) {
       return;
     } else {
-      income_values = values.cast<int>();
+      incomeValues = values.cast<int>();
     }
 
-    int x = income_values.reduce((a, b) => a + b); // Sum of all values
+    int x = incomeValues.reduce((a, b) => a + b); // Sum of all values
     x = x.floor(); // Round down to full Euro
 
-    double tax = 0;
-
-    if (x <= 12096) {
-      tax = 0;
-    } else if (x >= 12097 && x <= 17443) {
-      double y = (x - 12096) / 10000;
-      tax = (932.30 * y + 1400) * y;
-    } else if (x >= 17444 && x <= 68480) {
-      double z = (x - 17443) / 10000;
-      tax = (176.64 * z + 2397) * z + 1015.13;
-    } else if (x >= 68481 && x <= 277825) {
-      tax = 0.42 * x - 10911.92;
-    } else if (x >= 277826) {
-      tax = 0.45 * x - 19246.67;
-    }
-
-    tax = tax.floorToDouble(); // Round down to nearest Euro
+    double tax = _calculateTax(x);
+    double taxPaid = _calculatePaidTax(incomeValues);
+    double taxReturn = taxPaid - tax;
 
     showDialog(
       context: context,
@@ -160,7 +182,11 @@ class _TwelveInputFieldsState extends State<TwelveInputFields> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [Text('${tax.toStringAsFixed(0)} €')],
+          children: [
+            Text('Einkommenssteuer dieses Jahr: ${tax.toStringAsFixed(0)} €'),
+            Text('Bereits bezahlte Steuer: ${taxPaid.toStringAsFixed(0)} €'),
+            Text('Steuerrückerstattung: ${taxReturn.toStringAsFixed(0)} €'),
+          ],
         ),
         actions: [
           TextButton(
